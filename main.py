@@ -46,6 +46,22 @@ def calcAxleRadius(material):
     axleArea = Plat / stressAllow
     r = math.sqrt(axleArea/math.pi)
 
+    #pain
+    return r
+
+def calcFlangeThicknessTension(material,Diameter,width):
+    k = 0.7 ##arbitrary, find function for this (pain)
+
+    t = diameter/(k*material.sigmaYield,width)
+
+    return t
+
+def calcFlangeThicknessBearing(material,Diameter,width):
+
+
+
+##calculate the thickness for a certain width, take the minimum value, compare the mass for all materials.
+
 
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
