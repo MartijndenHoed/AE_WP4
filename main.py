@@ -5,6 +5,8 @@
 
 #bruhhh
 
+import math
+
 print("bruhh")
 
 
@@ -27,12 +29,22 @@ SafetyFactorLaunch = 1.25
 GLongMax = (GStaticlong + GDynamicLong) * SafetyFactorLaunch
 GlatMax = (GStaticLat + GDynamicLat) * SafetyFactorLaunch
 
-PLong = GLongMax * RTGmass
-Plat = GlatMax * RTGmass
+PLong = GLongMax * RTGmass * g
+Plat = GlatMax * RTGmass * g
 
 class material:
-    def __init__(self,E,sigmaYield):
+    def __init__(self,E,sigmaYield,density):
+        self.density = density
+        self.E = E
+        self.sigmaYield
 
+def calcAxleRadius(material):
+    #calcualte the minium radius of the (circular) axle
+
+
+    stressAllow = material.sigmaYield
+    axleArea = Plat / stressAllow
+    r = math.sqrt(axleArea/math.pi)
 
 
 def print_hi(name):
