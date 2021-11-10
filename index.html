@@ -1,0 +1,507 @@
+<html>
+
+<body>
+
+<input type="file"  accept="image/*" name="image"  onchange="loadFile(event)"id="file" >
+
+<input id="slide" type="range" min="100" max="1000" step="1" value="10" onchange="updateSlider(this.value)">
+
+<button id="button" onclick="generateRegress();"> Generate coefficients </button>
+<button id="clearCanvas" onclick="{ctx.clearRect(0, 0, canvas.width, canvas.height);}"> Clear Canvas</button>
+<button id="clearPoints" onclick="{points = []}"> Clear Points</button>
+<button id="buttonCallibrateX" onclick="callibrateX(event);"> Callibrate X</button>
+<button id="buttonCallibrateY" onclick="callibrateY(event);"> Callibrate Y</button>
+<button id="buttonSetOrigin" onclick="SetOrigin(event);"> Set origin</button>
+<button id="buttonAddPoints" onclick="addPoints(event);" disabled="true"> Add points</button> <br>
+Polynomial degrees: <input type="text" id = "degrees" value="auto"> </text> <br>
+Python Variable: <input type="text" id = "pythonVar" value=""> </text>
+<p id="results"> Result: y= </p>
+
+
+<div class = "graph"><img class=graphImage src="C:/users/marti/Downloads/Schermopname (160).png" id="output" width="400" height="auto"/>
+<canvas class =overlay id="overlayCanvas" onclick="imageClick(event);">   </canvas> </div>
+
+
+
+
+</body>
+
+
+
+ <style>
+ 
+ .graph
+ {
+ position:relative;
+ top: 00px; 
+ left: 00px; 
+ }
+ 
+ .graphImage
+ {
+ position:absolute;
+ top:0px;
+ left: 0px;
+ z-index: 10;
+ }
+ 
+  .overlay
+ {
+ position:absolute;
+ top:0px;
+ left: 0px;
+  z-index: 20;
+ }
+ </style>
+
+<script>
+//javascript > python > excel
+// ~Martijn den Hoed
+var image = document.getElementById('output');
+var canvas = document.getElementById('overlayCanvas');
+var ctx = canvas.getContext('2d');
+inputMode = "addPoints"
+xCallArray = [];
+yCallArray = [];
+xScale = 1;
+yScale = 1;
+origin = {x:0,y:0}
+
+
+image.onload= function() {
+canvas.width = image.width;
+canvas.height = image.height;
+}
+
+var loadFile = function(event) {
+
+	image.src = URL.createObjectURL(event.target.files[0]);
+	canvas.width = image.width;
+	canvas.height = image.height;
+};
+
+points = []; //[{"x":85,"y":27},{"x":99,"y":29},{"x":120,"y":34},{"x":141,"y":40},{"x":160,"y":44},{"x":176,"y":50},{"x":191,"y":54},{"x":198,"y":57},{"x":216,"y":56},{"x":237,"y":61},{"x":251,"y":66},{"x":267,"y":75},{"x":276,"y":84},{"x":283,"y":91},{"x":289,"y":102},{"x":297,"y":114},{"x":302,"y":126},{"x":307,"y":138}]
+
+Realpoints = [];
+degrees = 6;
+
+function updateSlider(slideAmount)
+{
+image.style.width =  String(slideAmount) + 'px';
+	canvas.width = image.width;
+	canvas.height = image.height;
+}
+
+function generateRealPoints(points)
+{
+	var realPoints = [];
+	for(var i=0;i<points.length;i++)
+	{
+		x = (points[i].x-origin.x)*xScale;
+		y = -(points[i].y-origin.y)*yScale;
+		realPoints[i] = {x:x,y:y};
+	}
+	//console.log(realPoints)
+	return realPoints;
+}
+
+function generateScreenCoords(point)
+{
+	var screenPoint = {x:0,y:0};
+		x = (point.x/xScale)+origin.x;
+		y = (-point.y/yScale)+origin.y;
+		screenPoint = {x:x,y:y};
+	//console.log(screenPoints)
+	return screenPoint;
+}
+
+function imageClick(event)
+{
+//console.log(event.offsetX);
+	if(inputMode=="addPoints")
+	{
+		ctx.fillStyle = "#00FF00";
+		points.push({x:event.offsetX,y:event.offsetY});
+		console.log(points);
+		ctx.fillRect(event.offsetX-1,event.offsetY-1,3,3);
+	}
+	if(inputMode=="callibrateX")
+	{
+		ctx.lineWidth = 1;
+		ctx.fillStyle = "#00FFFF";
+		if(xCallArray.length ==2)
+		{
+		xCallArray = [];
+		xCallArray.push({x:event.offsetX,y:event.offsetY});
+		}
+		if(xCallArray.length ==1)
+		{
+		xCallArray.push({x:event.offsetX,y:event.offsetY});
+		var xLength = prompt("enter length on graph");
+		xScale = xLength/Math.abs(xCallArray[0].x - xCallArray[1].x)
+		ctx.fillRect(event.offsetX-1,xCallArray[0].y-1,3,3);
+		
+		ctx.beginPath();
+		ctx.strokeStyle = "#00FFFF";
+		ctx.moveTo(xCallArray[0].x, xCallArray[0].y);
+		ctx.lineTo(xCallArray[1].x,xCallArray[0].y);
+		ctx.stroke();
+		ctx.closePath();
+		
+		console.log("xScale: " + xScale);
+		}
+		if(xCallArray.length ==0)
+		{
+		xCallArray.push({x:event.offsetX,y:event.offsetY});
+		ctx.fillRect(event.offsetX-1,event.offsetY-1,3,3);
+		}
+	}
+	if(inputMode=="callibrateY")
+	{
+		ctx.lineWidth = 1;
+		ctx.fillStyle = "#0000FF";
+		if(yCallArray.length ==2)
+		{
+		yCallArray = [];
+		yCallArray.push({x:event.offsetX,y:event.offsetY});
+		}
+		if(yCallArray.length ==1)
+		{
+		yCallArray.push({x:event.offsetX,y:event.offsetY});
+		var yLength = prompt("enter length on graph");
+		yScale = yLength/Math.abs(yCallArray[0].y - yCallArray[1].y)
+		ctx.fillRect(yCallArray[0].x-1,event.offsetY-1,3,3);
+		
+		ctx.beginPath();
+		ctx.strokeStyle = "#00FFFF";
+		ctx.moveTo(yCallArray[0].x, yCallArray[0].y);
+		ctx.lineTo(yCallArray[0].x,yCallArray[1].y);
+		ctx.stroke();
+		ctx.closePath();
+		
+		console.log("yScale: " + yScale);
+		}
+		if(yCallArray.length ==0)
+		{
+		yCallArray.push({x:event.offsetX,y:event.offsetY});
+		ctx.fillRect(event.offsetX-1,event.offsetY-1,3,3);
+		}
+	}
+	if(inputMode=="setOrigin")
+	{
+		ctx.fillStyle = "#FF00FF";
+		origin = {x:event.offsetX,y:event.offsetY};
+		console.log(origin);
+		ctx.fillRect(event.offsetX-1,event.offsetY-1,3,3);
+	}
+}
+
+function generateRegress() {
+console.log(JSON.stringify(points));
+	if(isNumeric(document.getElementById('degrees').value))
+	{
+		degrees = Number(document.getElementById('degrees').value);
+	}
+	else
+	{
+		degrees = 'auto';
+	}
+	var coefficients = generateCoefficients(generateRealPoints(points),degrees);
+	drawGraph(coefficients);
+	displayCoefficients(coefficients);
+}
+
+function drawGraph(coefficients)
+{
+//console.log("drawing:")
+ctx.fillStyle = "#FFFF00";
+ctx.strokeStyle = "#FF0000";
+ctx.lineWidth = 3;
+ctx.beginPath();
+
+
+	for(var x=0;x<canvas.width;x++)
+	{
+		xx = (x-origin.x)*xScale;
+		//console.log(xx);
+		var y = 0;
+		for(var n=0;n<coefficients.length;n++)
+		{
+			y += coefficients[n]*(xx**n);
+		
+		
+		}
+		//console.log("y: " + y);
+		coords = generateScreenCoords({x:x,y:y});
+		if(x==0)
+		{
+			ctx.moveTo(x,coords.y);
+		}
+		else{
+			ctx.lineTo(x,coords.y);
+		}
+		//ctx.fillRect(xx-1,coords.y-1,3,3);
+	
+	//console.log(coefficients.length);
+	}
+	ctx.stroke();
+	ctx.closePath();
+}
+
+function displayCoefficients(coefficients) {
+	var Result = " Result: y = ";
+	Result += Number(coefficients[0]).toFixed(3) + " ";
+	for(var i=1;i<coefficients.length;i++)
+	{
+		Result += "+ " + Number(coefficients[i]).toFixed(3+(i-3)) + " * x^" + i + " ";
+	
+	
+	}
+	
+	if(document.getElementById('pythonVar').value)
+	{
+		parameter = document.getElementById('pythonVar').value;
+		Result += " <br> Python Code: ";
+		Result += Number(coefficients[0]).toFixed(3) + " ";
+		for(var i=1;i<coefficients.length;i++)
+		{
+			Result += "+ " + Number(coefficients[i]) + " * (" + parameter + " ** " + i + ")" + " ";
+		
+		
+		}
+	}
+	
+
+	document.getElementById('results').innerHTML = Result;
+}
+
+function calculateAccuracy(points,coefficients)
+{
+	var yAverage = 0;
+	for(var i=0;i<points.length;i++)
+	{
+		yAverage += points[i].y;
+	}
+	yAverage/points.length;
+	
+	var upperSum = 0;
+	var lowerSum = 0;
+	
+	 for(var i=0;i<points.length;i++)
+	 {
+		yCalculated = 0;
+		for(var n=0;n<coefficients.length;n++)
+		{
+			yCalculated += coefficients[n]*(points[i].x**n);
+		
+		
+		}
+		
+		upperSum += (points[i].y - yCalculated)**2;
+		lowerSum += (points[i].y - yAverage)**2;
+	 }
+
+	rSquared = 1 - upperSum/lowerSum;
+	return rSquared;
+}
+
+function callibrateX()
+{
+	inputMode = "callibrateX";
+	document.getElementById('buttonCallibrateX').disabled = true;
+	document.getElementById('buttonCallibrateY').disabled = false;
+	document.getElementById('buttonAddPoints').disabled = false;
+	document.getElementById('buttonSetOrigin').disabled = false;
+}
+
+function callibrateY()
+{
+	inputMode = "callibrateY";
+	document.getElementById('buttonCallibrateX').disabled = false;
+	document.getElementById('buttonCallibrateY').disabled = true;
+	document.getElementById('buttonAddPoints').disabled = false;
+	document.getElementById('buttonSetOrigin').disabled = false;
+}
+
+function addPoints()
+{
+	inputMode = "addPoints";
+	document.getElementById('buttonCallibrateX').disabled = false;
+	document.getElementById('buttonCallibrateY').disabled = false;
+	document.getElementById('buttonAddPoints').disabled = true
+	document.getElementById('buttonSetOrigin').disabled = false;
+}
+function SetOrigin()
+{
+	inputMode = "setOrigin";
+	document.getElementById('buttonCallibrateX').disabled = false;
+	document.getElementById('buttonCallibrateY').disabled = false;
+	document.getElementById('buttonAddPoints').disabled =  false;
+	document.getElementById('buttonSetOrigin').disabled = true;
+}
+
+
+function generateCoefficients(points,requiredDegrees) {
+	var designMatrix = new Array(points.length);
+	//console.log(designMatrix);
+	bestAccuracy = -10000;
+	//console.log(typeof(degrees));
+	if(typeof(degrees)=="number")
+	{
+	//console.log(degrees);
+		for(var i=0;i<points.length;i++)
+		{
+			designMatrix[i] = new Array(degrees + 1)
+			for(var j=0;j<=degrees;j++)
+			{
+				designMatrix[i][j] = (points[i].x**j);
+			
+			}
+		}
+
+		var resultMatrix = new Array(points.length);
+		for(var i=0;i<points.length;i++)
+		{
+			resultMatrix[i] = [points[i].y];
+		}
+
+
+		var coefficients = multiplyMatrix(multiplyMatrix(invertMatrix(multiplyMatrix(transposeMatrix(designMatrix),designMatrix)),transposeMatrix(designMatrix)),resultMatrix);
+	}
+	else
+	{
+	
+		
+		for(var k=1;k<points.length;k++)
+		{
+			degrees = k;
+			//console.log(degrees);
+			for(var i=0;i<points.length;i++)
+			{
+				designMatrix[i] = new Array(degrees + 1)
+				for(var j=0;j<=degrees;j++)
+				{
+					designMatrix[i][j] = (points[i].x**j);
+				
+				}
+			}
+
+			var resultMatrix = new Array(points.length);
+			for(var i=0;i<points.length;i++)
+			{
+				resultMatrix[i] = [points[i].y];
+			}
+
+			var coefficients = multiplyMatrix(multiplyMatrix(invertMatrix(multiplyMatrix(transposeMatrix(designMatrix),designMatrix)),transposeMatrix(designMatrix)),resultMatrix);
+			var rSquared = calculateAccuracy(points,coefficients);
+			//console.log(rSquared);
+			//console.log(coefficients);
+			if(rSquared>bestAccuracy)
+			{
+				bestCoefficients = coefficients;
+				bestAccuracy = rSquared;
+			}
+		
+		
+		}
+		console.log("R: " + bestAccuracy);
+		coefficients = bestCoefficients;
+	}
+	
+
+
+	//console.log(designMatrix);
+	//console.log(resultMatrix);
+	//console.log(coefficients);
+	
+	//console.log(calculateAccuracy(points,coefficients));
+	
+	return coefficients;
+}
+
+function invertMatrix(_A) {
+    var temp,
+    N = _A.length,
+    E = [];
+   
+    for (var i = 0; i < N; i++)
+      E[i] = [];
+   
+    for (i = 0; i < N; i++)
+      for (var j = 0; j < N; j++) {
+        E[i][j] = 0;
+        if (i == j)
+          E[i][j] = 1;
+      }
+   
+    for (var k = 0; k < N; k++) {
+      temp = _A[k][k];
+   
+      for (var j = 0; j < N; j++)
+      {
+        _A[k][j] /= temp;
+        E[k][j] /= temp;
+      }
+   
+      for (var i = k + 1; i < N; i++)
+      {
+        temp = _A[i][k];
+   
+        for (var j = 0; j < N; j++)
+        {
+          _A[i][j] -= _A[k][j] * temp;
+          E[i][j] -= E[k][j] * temp;
+        }
+      }
+    }
+   
+    for (var k = N - 1; k > 0; k--)
+    {
+      for (var i = k - 1; i >= 0; i--)
+      {
+        temp = _A[i][k];
+   
+        for (var j = 0; j < N; j++)
+        {
+          _A[i][j] -= _A[k][j] * temp;
+          E[i][j] -= E[k][j] * temp;
+        }
+      }
+    }
+   
+    for (var i = 0; i < N; i++)
+      for (var j = 0; j < N; j++)
+        _A[i][j] = E[i][j];
+    return _A;
+  }
+  
+  function transposeMatrix(array)
+  {
+  
+  return array[0].map((_, colIndex) => array.map(row => row[colIndex]));
+  }
+
+
+function multiplyMatrix(a, b) {
+  var aNumRows = a.length, aNumCols = a[0].length,
+      bNumRows = b.length, bNumCols = b[0].length,
+      m = new Array(aNumRows);  // initialize array of rows
+  for (var r = 0; r < aNumRows; ++r) {
+    m[r] = new Array(bNumCols); // initialize the current row
+    for (var c = 0; c < bNumCols; ++c) {
+      m[r][c] = 0;             // initialize the current cell
+      for (var i = 0; i < aNumCols; ++i) {
+        m[r][c] += a[r][i] * b[i][c];
+      }
+    }
+  }
+  return m;
+}
+
+function isNumeric(num){
+  return !isNaN(num)
+}
+
+</script>
+
+</html>
