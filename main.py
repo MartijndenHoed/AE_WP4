@@ -32,7 +32,11 @@ GlatMax = (GStaticLat + GDynamicLat) * SafetyFactorLaunch
 PLong = GLongMax * RTGmass * g
 Plat = GlatMax * RTGmass * g
 
-class material:
+Fz_max = PLong
+Fx_max = Plat
+Fy_max = Plat
+
+class Material:
     def __init__(self,E,sigmaYield,density):
         self.density = density
         self.E = E
