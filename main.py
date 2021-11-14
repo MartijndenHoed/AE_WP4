@@ -68,9 +68,9 @@ def iterateConfigs():
     bestMass = 1000
     config = -1
     Diameter = 2 * calcAxleRadius(aluminium)
-    for x in range(0,30):
+    for x in range(0,300):
         W = x/10000
-        print("checking W: " + str(W))
+        #print("checking W: " + str(W))
         tempConfig = generateLugConfiguration(aluminium,W,0.2,Diameter)
         if(tempConfig != -1):
             tempMass = tempConfig.mass
@@ -106,23 +106,24 @@ def calcAxleRadius(material):
 
 def calcMinimumFlangeThickness(material,Diameter,width,l):
     #loop through all possible Rtr and Rtx ratios and calculate the absolute minimum flange thickness
-    steps = 10000
+    steps = 1000
 
     smallestLugT = 10000 #LARGEness
-
+    smallestTTension = 100
     for x in range(1,steps):
         Rax = x/steps
         Rtr = calcRtr(Rax)
 
         tAxial = calcFlangeThicknessTensionAxial(material,Diameter,width,Rax)
         tTransverse = calcFlangeThicknessTensionTransverse(material,Diameter,width,Rtr)
-        minT = max(tAxial,tTransverse)
+        minTTension = max(tAxial,tTransverse)
+        smallestTTension = min(minTTension,smallestTTension)
+        #print("Rax: " + str(Rax) + "Rtr: " + str(Rtr) + "minT: " + str(minTTension))
 
-    tBendingZ = 10
-    tBendingY = 100
+    tBendingXZ = calcFlangeThicknessBendingXZ(material,Diameter,width,l)
+    #print( tBendingXZ)
 
-
-    minT = max(minT,0)
+    minT = max(smallestTTension,tBendingXZ)
 
 
     return minT
@@ -133,7 +134,7 @@ def calcFlangeThicknessTensionAxial(material,D,W,Rax):
     Ratio = W/D
 
     k = Kt_val_axial(Ratio)
-    print(k)
+    #print(k)
 
     load = (0.5*LugFyMax)/Rax
     t = load/((W-D)*k*material.sigmaYield)
@@ -243,7 +244,11 @@ def calcFlangeThicknessBendingZ(material,Diameter,width,l):
     return t
 
 
-
+def calcFlangeThicknessBendingXZ(material,Diameter,w,l):
+    M1 = LugFzMax * l
+    M2 = LugFxMax * l
+    sigma = material.sigmaYield
+    return  (-((6*M1)/(w**2)) - math.sqrt( ((6*M1)/(w**2))**2 + 4 * sigma * ((6*M2)/(w)) ))/(-2*sigma)
 
 ##calculate the thickness for a certain width, take the minimum value, compare the mass for all materials.
 
@@ -292,10 +297,13 @@ testR = calcAxleRadius(aluminium)
 print(testR)
 testAxialT = calcFlangeThicknessTensionAxial(aluminium,testR,0.05,1) #(material,Diameter,width,Rax)
 print(testAxialT)
+#config = generateLugConfiguration(aluminium,0.03,0.1,0.0017)
 config = iterateConfigs()
 print("mass " + str(config.mass))
 print("diameter " + str(config.D))
 print("W " + str(config.W))
+print("T " + str(config.t))
+
 
 
 
