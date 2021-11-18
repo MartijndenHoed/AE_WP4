@@ -328,19 +328,3 @@ print("diameter " + str(config.D))
 print("W " + str(config.W))
 print("T " + str(config.t))
 ("L " + str(config.l))
-
-#wArr = []
-#tArr = []
-#for x in range(1,100):
- #   t = x/10000
- #   diff = calcStressDifference(t,[0.0028,0.03,0.012,200000000])
-#
- #   print(str(t) + " " + str(diff))
- #   wArr.append(t)
-#    tArr.append(diff)
-#plt.plot(wArr,tArr)
-#plt.show()
-
-print(linearSolve(calcStressDifference, zeroFunc, 0.002, 1, 10, 3, [0.00295,0.03,0.012,200000000]))
-
-#print(calcFlangeStressAxial(0.001,2*testR,0.014,0.7))
